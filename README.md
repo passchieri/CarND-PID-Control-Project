@@ -1,98 +1,41 @@
 # CarND-Controls-PID
 Self-Driving Car Engineer Nanodegree Program
+Author: *Igor Passchier*
+Email: *igor.passchier@tassinternational.com*
 
 ---
+## Introduction
 
-## Dependencies
+This README follows the Project rubric.
 
-* cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1(mac, linux), 3.81(Windows)
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
-* [uWebSockets](https://github.com/uWebSockets/uWebSockets)
-  * Run either `./install-mac.sh` or `./install-ubuntu.sh`.
-  * If you install from source, checkout to commit `e94b6e1`, i.e.
-    ```
-    git clone https://github.com/uWebSockets/uWebSockets 
-    cd uWebSockets
-    git checkout e94b6e1
-    ```
-    Some function signatures have changed in v0.14.x. See [this PR](https://github.com/udacity/CarND-MPC-Project/pull/3) for more details.
-* Simulator. You can download these from the [project intro page](https://github.com/udacity/self-driving-car-sim/releases) in the classroom.
+## Compilation
+### Code should compile
+The code compiles with cmake and make, as described. This has been tested on a mac with latest OS and latest version of Xcode and command line tools.
 
-There's an experimental patch for windows in this [PR](https://github.com/udacity/CarND-PID-Control-Project/pull/3)
+## Implementation
+### The PID procedure follows what was taught in the lesson
+The PID controller is implemented in line with the theory described in the lesson. The errors are stored in the PID controler already taking into account the control constants. It would have been just as well possible to apply the constants only when the total error is calculated.
 
-## Basic Build Instructions
+## Reflection
+### Describe the effect of PID
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./pid`. 
+Two PID controllers are implemented, one for steering, one for throttle. The steering PID is similar to the PID developed in python in the lesson. The P component is the basis of the controller. The larger the Kp, the faster the car is steered back to the central line. However, this also causes overshoot. The overshoot is cancelled by the D term. The PID controller does not take into account the time step, so effectively the Kd constant has to compensate for the timestep. In the lesson, the timestep was 1, here it is 0.1. That means that the ratio between Kp and Pd should be a factor 10 different than in the lesson. The steering seems not to have a big bias in itself, so the Ki term could be kept small/zero. However, as we go around in one direction, we effectively still have a bias, as on average we should be steering to the left. Similarly as to the D component, also the I component need to compensate the timestep in the constant Ki. In this case, scaled in the opposite direction.
 
-Tips for setting up your environment can be found [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
+The effect of the various terms is similar for the PID controller for the speed.
 
-## Editor Settings
+### Describe how the final hyperparameters were chosen
+The PID controller for the steering was first initialized based on the twiddle optimized values of the PID controller from the lesson, taking into account the scaling due to the update frequency differences. Afterwards, the parameters where tuned visually via the simulator. Also, an average error parameter was calculated, and roughly checked what that was after a full lap. the Kp term was increased to get the car faster to the center line, D to reduce the oscilations, and I to finally get the lowest possible value for the average error after a full lap. Parameter changes where made in a similar way as twiddle would do.
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+I would have liked to do a real twiddle optimization, but I had no effective way to control and restart the simulator, and to determine when a full lap was reached. 
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+The final result would make me sick if I would have to sit in the car. The driving can be made much more smooth by reducing all parameter values, but then the car will not make the sharp corners. People would brake at the corners, and see them coming, but this simple controller does not see the curves coming. So the P term needs to be large enough to make it through the curves.
 
-## Code Style
+The PID controller for the throttle was optimized in a similar was. In the first part, it overshoots, because the I term blows up because the car starts at a stand still. This could be overcome by having a more advanced controller, where e.g. the I term would not be taken into account during initial acceleration. This would mean that not the same PID controller could have been used. Therefore, I have not done this.
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+The setspeed also can be tuned. I have experimented with several values. It is very well possible to tune the steering PID properly for any values below 40 Mph. I have arbitrary choosen 30 Mph. Higher than 40 Mph makes the steering very unstable, and the car goes out of the track, as would a normal car also do if it tries to go around the track at such high speeds.
 
-## Project Instructions and Rubric
+## Simulation
+### The vehicle must successfully drive around the track
+With the current settings, the car drives nicely around the track. In some corners it is tight and it is possible to keep the car better in the center in the curves, but that would mean less smooth driving on the rest of the track. Although that is not part of the criteria, I still choose settings that resulted in more smooth driving.
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
-
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/e8235395-22dd-4b87-88e0-d108c5e5bbf4/concepts/6a4d8d42-6a04-4aa6-b284-1697c0fd6562)
-for instructions and the project rubric.
-
-## Hints!
-
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
-
-## Call for IDE Profiles Pull Requests
-
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
-
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 
